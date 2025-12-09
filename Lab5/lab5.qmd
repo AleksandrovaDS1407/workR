@@ -1,0 +1,461 @@
+---
+title: "Исследование информации о состоянии беспроводных
+сетей"
+subtitle: "005"
+author: "deesshii@yandex.ru"
+format:
+  md:
+    output-file: README.md
+---
+
+## Цель работы:
+1. Получить знания о методах исследования радиоэлектронной обстановки.
+2. Составить представление о механизмах работы Wi-Fi сетей на канальном и
+сетевом уровне модели OSI.
+3. Зекрепить практические навыки использования языка программирования R для
+обработки данных
+4. Закрепить знания основных функций обработки данных экосистемы tidyverse
+языка R
+
+## Исходные данные
+
+1. Программное обеспечение Windows 10 
+2. Rstudio Desktop
+3. Наше рабочее окружение
+
+```{r}
+sessionInfo()
+```
+     
+       
+ 
+## План
+
+Используя R и среду разработки RstudioIDE, выполнить задания.
+
+## Шаги:   
+```
+> # Установка и загрузка пакетов
+> install.packages(c("tidyverse", "lubridate", "stringr", "geosphere"))
+WARNING: Rtools is required to build R packages but is not currently installed. Please download and install the appropriate version of Rtools before proceeding:
+
+https://cran.rstudio.com/bin/windows/Rtools/
+Устанавливаю пакеты в ‘C:/Users/futyr/AppData/Local/R/win-library/4.5’
+(потому что ‘lib’ не определено)
+устанавливаю также зависимость ‘sp’
+пробую URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/sp_2.2-0.zip'
+пробую URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/tidyverse_2.0.0.zip'
+пробую URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/lubridate_1.9.4.zip'
+пробую URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/stringr_1.6.0.zip'
+пробую URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/geosphere_1.5-20.zip'
+пакет ‘sp’ успешно распакован, MD5-суммы проверены
+пакет ‘tidyverse’ успешно распакован, MD5-суммы проверены
+пакет ‘lubridate’ успешно распакован, MD5-суммы проверены
+пакет ‘stringr’ успешно распакован, MD5-суммы проверены
+пакет ‘geosphere’ успешно распакован, MD5-суммы проверены
+
+Скачанные бинарные пакеты находятся в
+	C:\Users\futyr\AppData\Local\Temp\Rtmp06T7dk\downloaded_packages
+> library(tidyverse)
+── Attaching core tidyverse packages ───────────────────────── tidyverse 2.0.0 ──
+✔ dplyr     1.1.4     ✔ readr     2.1.6
+✔ forcats   1.0.1     ✔ stringr   1.6.0
+✔ ggplot2   4.0.1     ✔ tibble    3.3.0
+✔ lubridate 1.9.4     ✔ tidyr     1.3.1
+✔ purrr     1.2.0     
+── Conflicts ─────────────────────────────────────────── tidyverse_conflicts() ──
+✖ dplyr::filter() masks stats::filter()
+✖ dplyr::lag()    masks stats::lag()
+ℹ Use the conflicted package to force all conflicts to become errors
+> library(lubridate)
+> library(lubridate)
+> library(stringr)
+> library(geosphere)
+> # Загрузка данных (два разных формата в одном файле)
+> url <- "https://storage.yandexcloud.net/dataset.ctfsec/P2_wifi_data.csv"
+> # Читаем файл для просмотра структуры
+> raw_lines <- read_lines(url, n_max = 50)
+> print("Первые строки файла:")
+[1] "Первые строки файла:"
+> print(head(raw_lines))
+[1] ""                                                                                                                                                      
+[2] "BSSID, First time seen, Last time seen, channel, Speed, Privacy, Cipher, Authentication, Power, # beacons, # IV, LAN IP, ID-length, ESSID, Key"        
+[3] "BE:F1:71:D5:17:8B, 2023-07-28 09:13:03, 2023-07-28 11:50:50,  1, 195, WPA2, CCMP, PSK, -30,      846,      504,   0.  0.  0.  0,  12, C322U13 3965, "  
+[4] "6E:C7:EC:16:DA:1A, 2023-07-28 09:13:03, 2023-07-28 11:55:12,  1, 130, WPA2, CCMP, PSK, -30,      750,      116,   0.  0.  0.  0,   4, Cnet, "          
+[5] "9A:75:A8:B9:04:1E, 2023-07-28 09:13:03, 2023-07-28 11:53:31,  1, 360, WPA2, CCMP, PSK, -68,      694,       26,   0.  0.  0.  0,   2, KC, "            
+[6] "4A:EC:1E:DB:BF:95, 2023-07-28 09:13:03, 2023-07-28 11:04:01,  7, 360, WPA2, CCMP, PSK, -37,      510,       21,   0.  0.  0.  0,  14, POCO X5 Pro 5G, "
+
+> # Упрощенный подход без определения split_line
+> url <- "https://storage.yandexcloud.net/dataset.ctfsec/P2_wifi_data.csv"
+> # Способ 1: Читаем все строки и находим разделитель вручную
+> all_lines <- readLines(url, warn = FALSE)
+> 
+> 
+> 
+> 
+> # Находим строку, где начинаются данные клиентов
+> client_start_line <- grep("Station MAC", all_lines)
+> 
+> if (length(client_start_line) > 0) {
++     # Читаем точки доступа
++     ap_data <- read_csv(
++         I(all_lines[1:(client_start_line-1)]),
++         col_names = TRUE,
++         col_types = cols(.default = col_character())
++     )
++     
++     # Читаем клиентов
++     client_data <- read_csv(
++         I(all_lines[client_start_line:length(all_lines)]),
++         col_names = TRUE,
++         col_types = cols(.default = col_character())
++     )
++ } else {
++     # Если нет разделителя, читаем все как точки доступа
++     ap_data <- read_csv(
++         url,
++         col_names = TRUE,
++         col_types = cols(.default = col_character())
++     )
++     client_data <- tibble()  # пустой датафрейм
++ }
+Предупреждение:
+One or more parsing issues, call `problems()` on your data frame for details,
+e.g.:
+  dat <- vroom(...)
+  problems(dat) 
+
+> cat("Точки доступа - строки:", nrow(ap_data), "столбцы:", ncol(ap_data), "\n")
+Точки доступа - строки: 167 столбцы: 15 
+> cat("Клиенты - строки:", nrow(client_data), "столбцы:", ncol(client_data), "\n")
+Клиенты - строки: 12081 столбцы: 7 
+> # Просмотр структуры
+> if (nrow(ap_data) > 0) {
++   cat("\n=== СТРУКТУРА ТОЧЕК ДОСТУПА ===\n")
++   glimpse(ap_data)
++ }
+
+=== СТРУКТУРА ТОЧЕК ДОСТУПА ===
+Rows: 167
+Columns: 15
+$ BSSID             <chr> "BE:F1:71:D5:17:8B", "6E:C7:EC:16:DA:1A", "9A:75:A8:B…
+$ `First time seen` <chr> "2023-07-28 09:13:03", "2023-07-28 09:13:03", "2023-0…
+$ `Last time seen`  <chr> "2023-07-28 11:50:50", "2023-07-28 11:55:12", "2023-0…
+$ channel           <chr> "1", "1", "1", "7", "6", "6", "11", "11", "11", "1", …
+$ Speed             <chr> "195", "130", "360", "360", "130", "130", "195", "130…
+$ Privacy           <chr> "WPA2", "WPA2", "WPA2", "WPA2", "WPA2", "OPN", "WPA2"…
+$ Cipher            <chr> "CCMP", "CCMP", "CCMP", "CCMP", "CCMP", NA, "CCMP", "…
+$ Authentication    <chr> "PSK", "PSK", "PSK", "PSK", "PSK", NA, "PSK", "PSK", …
+$ Power             <chr> "-30", "-30", "-68", "-37", "-57", "-63", "-27", "-38…
+$ `# beacons`       <chr> "846", "750", "694", "510", "647", "251", "1647", "12…
+$ `# IV`            <chr> "504", "116", "26", "21", "6", "3430", "80", "11", "0…
+$ `LAN IP`          <chr> "0.  0.  0.  0", "0.  0.  0.  0", "0.  0.  0.  0", "0…
+$ `ID-length`       <chr> "12", "4", "2", "14", "25", "13", "12", "13", "24", "…
+$ ESSID             <chr> "C322U13 3965", "Cnet", "KC", "POCO X5 Pro 5G", NA, "…
+$ Key               <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
+> 
+> if (nrow(client_data) > 0) {
++   cat("\n=== СТРУКТУРА КЛИЕНТОВ ===\n")
++   glimpse(client_data)
++ }
+
+=== СТРУКТУРА КЛИЕНТОВ ===
+Rows: 12,081
+Columns: 7
+$ `Station MAC`     <chr> "CA:66:3B:8F:56:DD", "96:35:2D:3D:85:E6", "5C:3A:45:9…
+$ `First time seen` <chr> "2023-07-28 09:13:03", "2023-07-28 09:13:03", "2023-0…
+$ `Last time seen`  <chr> "2023-07-28 10:59:44", "2023-07-28 09:13:03", "2023-0…
+$ Power             <chr> "-33", "-65", "-39", "-61", "-53", "-43", "-31", "-71…
+$ `# packets`       <chr> "858", "4", "432", "958", "1", "344", "163", "3", "11…
+$ BSSID             <chr> "BE:F1:71:D5:17:8B", "(not associated)", "BE:F1:71:D6…
+$ `Probed ESSIDs`   <chr> "C322U13 3965", "IT2 Wireless", "C322U21 0566", "C322…
+> # Функция для извлечения OUI (первые 6 символов MAC)
+> get_oui <- function(mac) {
++   if (!is.na(mac)) {
++     return(str_sub(str_replace_all(mac, ":", ""), 1, 6))
++   }
++   return(NA)
++ }
+> 
+> # Обработка данных точек доступа
+> ap_clean <- ap_data %>%
++   rename_with(~tolower(str_replace_all(.x, " ", "_"))) %>%
++   mutate(
++     first_time_seen = parse_datetime(first_time_seen, format = "%Y-%m-%d %H:%M:%S"),
++     last_time_seen = parse_datetime(last_time_seen, format = "%Y-%m-%d %H:%M:%S"),
++     channel = as.numeric(channel),
++     speed = as.numeric(str_extract(speed, "\\d+")),
++     privacy = as.character(privacy),
++     # Извлечение OUI
++     oui = map_chr(bssid, get_oui),
++     session_duration = as.numeric(difftime(last_time_seen, first_time_seen, units = "secs")),
++     beacon_rate = as.numeric(`#_beacons`) / ifelse(session_duration > 0, session_duration, 1)
++   )
+> # Обработка данных клиентов
+> client_clean <- client_data %>%
++   rename_with(~tolower(str_replace_all(.x, " ", "_"))) %>%
++   mutate(
++     first_time_seen = parse_datetime(first_time_seen, format = "%Y-%m-%d %H:%M:%S"),
++     last_time_seen = parse_datetime(last_time_seen, format = "%Y-%m-%d %H:%M:%S"),
++     power = as.numeric(power),
++     # Извлечение OUI
++     oui = map_chr(station_mac, get_oui),
++     session_duration = as.numeric(difftime(last_time_seen, first_time_seen, units = "secs"))
++   )
+> # 1. Небезопасные точки доступа (OPN)
+> insecure_aps <- ap_clean %>%
++   filter(privacy == "OPN") %>%
++   select(bssid, essid, privacy, first_time_seen, last_time_seen)
+> cat("Небезопасные точки доступа (OPN):", nrow(insecure_aps), "\n")
+Небезопасные точки доступа (OPN): 42 
+> print(insecure_aps)
+# A tibble: 42 × 5
+   bssid             essid        privacy first_time_seen     last_time_seen     
+   <chr>             <chr>        <chr>   <dttm>              <dttm>             
+ 1 E8:28:C1:DC:B2:52 MIREA_HOTSP… OPN     2023-07-28 09:13:03 2023-07-28 11:55:38
+ 2 E8:28:C1:DC:B2:50 MIREA_GUESTS OPN     2023-07-28 09:13:06 2023-07-28 11:55:12
+ 3 E8:28:C1:DC:B2:51 NA           OPN     2023-07-28 09:13:06 2023-07-28 11:55:11
+ 4 E8:28:C1:DC:FF:F2 NA           OPN     2023-07-28 09:13:06 2023-07-28 11:55:10
+ 5 00:25:00:FF:94:73 NA           OPN     2023-07-28 09:13:06 2023-07-28 11:56:21
+ 6 E8:28:C1:DD:04:52 MIREA_HOTSP… OPN     2023-07-28 09:13:09 2023-07-28 11:56:05
+ 7 E8:28:C1:DE:74:31 NA           OPN     2023-07-28 09:13:13 2023-07-28 10:27:06
+ 8 E8:28:C1:DE:74:32 MIREA_HOTSP… OPN     2023-07-28 09:13:13 2023-07-28 10:39:43
+ 9 E8:28:C1:DC:C8:32 MIREA_HOTSP… OPN     2023-07-28 09:13:17 2023-07-28 11:52:32
+10 E8:28:C1:DD:04:50 MIREA_GUESTS OPN     2023-07-28 09:13:50 2023-07-28 11:43:39
+# ℹ 32 more rows
+# ℹ Use `print(n = ...)` to see more rows
+> # 2. Производители устройств (OUI lookup)
+> # Пример функции для поиска производителя по OUI
+> get_vendor <- function(oui) {
++   vendors <- list(
++     "001122" = "Example Vendor 1",
++     "AABBCC" = "Example Vendor 2"
++     # Добавьте реальные OUI
++   )
++   if (oui %in% names(vendors)) {
++     return(vendors[[oui]])
++   }
++   return("Unknown")
++ }
+> 
+> ap_clean <- ap_clean %>%
++   mutate(vendor = map_chr(oui, get_vendor))
+> # 3. Устройства с WPA3
+> wpa3_aps <- ap_clean %>%
++   filter(str_detect(privacy, "WPA3")) %>%
++   select(bssid, essid, privacy, vendor)
+> cat("Устройства с WPA3:", nrow(wpa3_aps), "\n")
+Устройства с WPA3: 8 
+> print(wpa3_aps)
+# A tibble: 8 × 4
+  bssid             essid                                          privacy vendor
+  <chr>             <chr>                                          <chr>   <chr> 
+1 26:20:53:0C:98:E8  NA                                            WPA3 W… Unkno…
+2 A2:FE:FF:B8:9B:C9 "Christie’s"                                   WPA3 W… Unkno…
+3 96:FF:FC:91:EF:64  NA                                            WPA3 W… Unkno…
+4 CE:48:E7:86:4E:33 "iPhone (Анастасия)"                           WPA3 W… Unkno…
+5 8E:1F:94:96:DA:FD "iPhone (Анастасия)"                           WPA3 W… Unkno…
+6 BE:FD:EF:18:92:44 "Димасик"                                      WPA3 W… Unkno…
+7 3A:DA:00:F9:0C:02 "iPhone XS Max \U0001f98a\U0001f431\U0001f98a" WPA3 W… Unkno…
+8 76:C5:A0:70:08:96  NA                                            WPA3 W… Unkno…
+> # 4. Сессии (склеивание с интервалом 45 минут)
+> ap_sessions <- ap_clean %>%
++   arrange(bssid, first_time_seen) %>%
++   group_by(bssid) %>%
++   mutate(
++     time_gap = as.numeric(difftime(first_time_seen, lag(last_time_seen), units = "mins")),
++     session_id = cumsum(is.na(time_gap) | time_gap > 45)
++   ) %>%
++   group_by(bssid, session_id) %>%
++   summarise(
++     total_duration = sum(session_duration),
++     first_seen = min(first_time_seen),
++     last_seen = max(last_time_seen),
++     avg_power = mean(as.numeric(power), na.rm = TRUE),
++     .groups = "drop"
++   ) %>%
++   arrange(desc(total_duration))
+> 
+> cat("Топ-10 AP по длительности сессии:\n")
+Топ-10 AP по длительности сессии:
+> print(ap_sessions %>% head(10))
+# A tibble: 10 × 6
+   bssid        session_id total_duration first_seen          last_seen          
+   <chr>             <int>          <dbl> <dttm>              <dttm>             
+ 1 00:25:00:FF…          1           9795 2023-07-28 09:13:06 2023-07-28 11:56:21
+ 2 E8:28:C1:DD…          1           9776 2023-07-28 09:13:09 2023-07-28 11:56:05
+ 3 E8:28:C1:DC…          1           9755 2023-07-28 09:13:03 2023-07-28 11:55:38
+ 4 08:3A:2F:56…          1           9746 2023-07-28 09:13:27 2023-07-28 11:55:53
+ 5 6E:C7:EC:16…          1           9729 2023-07-28 09:13:03 2023-07-28 11:55:12
+ 6 E8:28:C1:DC…          1           9726 2023-07-28 09:13:06 2023-07-28 11:55:12
+ 7 48:5B:39:F9…          1           9725 2023-07-28 09:13:06 2023-07-28 11:55:11
+ 8 E8:28:C1:DC…          1           9725 2023-07-28 09:13:06 2023-07-28 11:55:11
+ 9 E8:28:C1:DC…          1           9724 2023-07-28 09:13:06 2023-07-28 11:55:10
+10 8E:55:4A:85…          1           9723 2023-07-28 09:13:06 2023-07-28 11:55:09
+# ℹ 1 more variable: avg_power <dbl>
+> # 5. Самые быстрые точки доступа
+> fast_aps <- ap_clean %>%
++   filter(!is.na(speed)) %>%
++   arrange(desc(speed)) %>%
++   select(bssid, essid, speed, vendor) %>%
++   head(10)
+> cat("Топ-10 самых быстрых AP:\n")
+Топ-10 самых быстрых AP:
+> print(fast_aps)
+# A tibble: 10 × 4
+   bssid             essid              speed vendor 
+   <chr>             <chr>              <dbl> <chr>  
+ 1 26:20:53:0C:98:E8 NA                   866 Unknown
+ 2 96:FF:FC:91:EF:64 NA                   866 Unknown
+ 3 CE:48:E7:86:4E:33 iPhone (Анастасия)   866 Unknown
+ 4 8E:1F:94:96:DA:FD iPhone (Анастасия)   866 Unknown
+ 5 9A:75:A8:B9:04:1E KC                   360 Unknown
+ 6 4A:EC:1E:DB:BF:95 POCO X5 Pro 5G       360 Unknown
+ 7 56:C5:2B:9F:84:90 OnePlus 6T           360 Unknown
+ 8 E8:28:C1:DC:B2:41 MIREA_GUESTS         360 Unknown
+ 9 E8:28:C1:DC:B2:40 MIREA_HOTSPOT        360 Unknown
+10 E8:28:C1:DC:B2:42 NA                   360 Unknown
+> # 6. Частота отправки beacon
+> beacon_rate_aps <- ap_clean %>%
++   filter(!is.na(beacon_rate)) %>%
++   arrange(desc(beacon_rate)) %>%
++   select(bssid, essid, beacon_rate, `#_beacons`, session_duration) %>%
++   head(10)
+> cat("Топ-10 AP по частоте beacon:\n")
+Топ-10 AP по частоте beacon:
+> print(beacon_rate_aps)
+# A tibble: 10 × 5
+   bssid             essid               beacon_rate `#_beacons` session_duration
+   <chr>             <chr>                     <dbl> <chr>                  <dbl>
+ 1 76:E4:ED:B0:5C:9A Инет от Путина                1 1                          0
+ 2 C2:B5:D7:7F:07:A8 DIRECT-a8-HP M227f…           1 1                          0
+ 3 E8:28:C1:DE:47:D1 NA                            1 1                          0
+ 4 A2:FE:FF:B8:9B:C9 Christie’s                    1 1                          0
+ 5 BA:2A:7A:DD:38:3E Айфон (Oleg)                  1 1                          0
+ 6 76:5E:F3:F9:A5:1C Redmi 9C NFC                  1 1                          0
+ 7 00:03:7F:12:34:56 MT_FREE                       1 1                          0
+ 8 E0:D9:E3:49:00:B1 NA                            1 1                          0
+ 9 E8:28:C1:DC:BD:52 MIREA_HOTSPOT                 1 1                          0
+10 00:26:CB:AA:62:72 GIVC                          1 1                          0
+> 
+> 
+> # 1. Производители клиентов
+> client_clean <- client_clean %>%
++     mutate(vendor = map_chr(oui, get_vendor))
+> # 2. Устройства без рандомизации MAC
+> # Определяем по OUI и структуре MAC
+> client_clean <- client_clean %>%
++   mutate(
++     # Проверка на локально-администрируемый адрес (бит 1 второго октета)
++     mac_bytes = str_split(station_mac, ":"),
++     second_byte = as.hexmode(mac_bytes[[1]][2]),
++     is_randomized = as.logical(bitwAnd(as.integer(second_byte), 2))
++   )
+> 
+> non_randomized <- client_clean %>%
++   filter(!is_randomized) %>%
++   select(station_mac, vendor, first_time_seen)
+> cat("Устройства без рандомизации MAC:", nrow(non_randomized), "\n")
+Устройства без рандомизации MAC: 0 
+> print(non_randomized)
+# A tibble: 0 × 3
+# ℹ 3 variables: station_mac <chr>, vendor <chr>, first_time_seen <dttm>
+> # 3. Кластеризация запросов
+> client_clusters <- client_clean %>%
++   filter(!is.na(probed_essids)) %>%
++   mutate(
++     probed_list = str_split(probed_essids, ", ")
++   ) %>%
++   unnest(probed_list) %>%
++   group_by(station_mac, probed_list) %>%
++   summarise(
++     first_seen = min(first_time_seen),
++     last_seen = max(last_time_seen),
++     avg_power = mean(power, na.rm = TRUE),
++     request_count = n(),
++     .groups = "drop"
++   ) %>%
++   rename(ssid = probed_list)
+> 
+> cat("Пример кластеризации запросов:\n")
+Пример кластеризации запросов:
+> print(client_clusters %>% head(10))
+# A tibble: 10 × 6
+   station_mac       ssid       first_seen          last_seen           avg_power
+   <chr>             <chr>      <dttm>              <dttm>                  <dbl>
+ 1 00:90:4C:E6:54:54 "Redmi"    2023-07-28 09:16:59 2023-07-28 10:21:15       -65
+ 2 00:95:69:E7:7C:ED "nvripcsu… 2023-07-28 09:13:11 2023-07-28 11:56:13       -55
+ 3 00:95:69:E7:7D:21 "nvripcsu… 2023-07-28 09:13:15 2023-07-28 11:56:17       -33
+ 4 00:95:69:E7:7F:35 "nvripcsu… 2023-07-28 09:13:11 2023-07-28 11:56:07       -69
+ 5 00:F4:8D:F7:C5:19 "Redmi 12… 2023-07-28 10:45:04 2023-07-28 11:43:26       -73
+ 6 02:00:00:00:00:00 "xt3 w64d… 2023-07-28 09:54:40 2023-07-28 11:55:36       -67
+ 7 02:06:2B:A5:0C:31 "Avenue61… 2023-07-28 09:55:12 2023-07-28 09:55:12       -65
+ 8 02:1D:0F:A4:94:74 "iPhone (… 2023-07-28 09:57:08 2023-07-28 09:57:08       -61
+ 9 02:32:DC:56:5C:82 "Timo Res… 2023-07-28 10:58:23 2023-07-28 10:58:24       -84
+10 02:35:E9:C2:44:5F "iPhone (… 2023-07-28 10:00:55 2023-07-28 10:00:55       -88
+# ℹ 1 more variable: request_count <int>
+> # 4. Оценка стабильности сигнала
+> signal_stability <- client_clean %>%
++   group_by(station_mac) %>%
++   summarise(
++     signal_mean = mean(power, na.rm = TRUE),
++     signal_sd = sd(power, na.rm = TRUE),
++     signal_range = max(power, na.rm = TRUE) - min(power, na.rm = TRUE),
++     observation_count = n(),
++     .groups = "drop"
++   ) %>%
++   filter(!is.na(signal_sd)) %>%
++   arrange(signal_sd)
+> 
+> cat("Самые стабильные устройства (по уровню сигнала):\n")
+Самые стабильные устройства (по уровню сигнала):
+> print(signal_stability %>% head(10))
+# A tibble: 0 × 5
+# ℹ 5 variables: station_mac <chr>, signal_mean <dbl>, signal_sd <dbl>,
+#   signal_range <dbl>, observation_count <int>
+> 
+> 
+> 
+> # Визуализация распределения типов шифрования
+> encryption_plot <- ap_clean %>%
++   count(privacy, sort = TRUE) %>%
++   filter(!is.na(privacy)) %>%
++   ggplot(aes(x = reorder(privacy, n), y = n)) +
++   geom_col(fill = "steelblue") +
++   coord_flip() +
++   labs(
++     title = "Распределение типов шифрования Wi-Fi сетей",
++     x = "Тип шифрования",
++     y = "Количество точек доступа"
++   )
+> print(encryption_plot)
+> 
+> # Временная активность клиентов
+> time_activity <- client_clean %>%
++   mutate(hour = hour(first_time_seen)) %>%
++   count(hour) %>%
++   ggplot(aes(x = hour, y = n)) +
++   geom_line(color = "darkred", size = 1.5) +
++   geom_point(color = "darkred", size = 2) +
++   labs(
++     title = "Активность клиентов по часам",
++     x = "Час суток",
++     y = "Количество обнаружений"
++   )
+Предупреждение:
+Using `size` aesthetic for lines was deprecated in ggplot2 3.4.0.
+ℹ Please use `linewidth` instead.
+This warning is displayed once every 8 hours.
+Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
+generated. 
+> print(time_activity)
+```
+
+## Оценка результата
+
+ В результате лабораторной работы мы получили знания о методах исследования радиоэлектронной обстановки. Составили представление о механизмах работы Wi-Fi сетей на канальном и сетевом уровне модели OSI. Зекрепили практические навыки использования языка программирования R для
+обработки данных. Закрепили знания основных функций обработки данных экосистемы tidyverseязыка R
+
+## Вывод
+
+Таким образом, мы получили знания о методах исследования радиоэлектронной обстановки.
