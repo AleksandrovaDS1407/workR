@@ -1,0 +1,383 @@
+---
+title: "Исследование вредоносной активности в домене
+Windows"
+subtitle: "006"
+author: "deesshii@yandex.ru"
+format:
+  md:
+    output-file: README.md
+---
+
+## Цель работы:
+1. Закрепить навыки исследования данных журнала Windows Active Directory
+2. Изучить структуру журнала системы Windows Active Directory
+3. Зекрепить практические навыки использования языка программирования R для
+обработки данных
+4. Закрепить знания основных функций обработки данных экосистемы tidyverse
+языка R
+
+## Исходные данные
+
+1. Программное обеспечение Windows 10 
+2. Rstudio Desktop
+3. Наше рабочее окружение
+
+```{r}
+sessionInfo()
+```
+     
+       
+ 
+## План
+
+Используя R и среду разработки RstudioIDE, выполнить задания.
+
+## Шаги:   
+```
+install.packages(c("dplyr", "tidyr", "jsonlite", "xml2", "rvest", "readr", "stringr"))
+WARNING: Rtools is required to build R packages but is not currently installed. Please download and install the appropriate version of Rtools before proceeding:
+
+https://cran.rstudio.com/bin/windows/Rtools/
+Устанавливаю пакеты в ‘C:/Users/futyr/AppData/Local/R/win-library/4.5’
+(потому что ‘lib’ не определено)
+пробую URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/dplyr_1.1.4.zip'
+пробую URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/tidyr_1.3.1.zip'
+пробую URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/jsonlite_2.0.0.zip'
+пробую URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/xml2_1.5.1.zip'
+пробую URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/rvest_1.0.5.zip'
+пробую URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/readr_2.1.6.zip'
+пробую URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/stringr_1.6.0.zip'
+пакет ‘dplyr’ успешно распакован, MD5-суммы проверены
+пакет ‘tidyr’ успешно распакован, MD5-суммы проверены
+пакет ‘jsonlite’ успешно распакован, MD5-суммы проверены
+пакет ‘xml2’ успешно распакован, MD5-суммы проверены
+пакет ‘rvest’ успешно распакован, MD5-суммы проверены
+пакет ‘readr’ успешно распакован, MD5-суммы проверены
+пакет ‘stringr’ успешно распакован, MD5-суммы проверены
+
+Скачанные бинарные пакеты находятся в
+	C:\Users\futyr\AppData\Local\Temp\RtmpaQi7Un\downloaded_packages
+> install.packages("dplyr")
+WARNING: Rtools is required to build R packages but is not currently installed. Please download and install the appropriate version of Rtools before proceeding:
+
+https://cran.rstudio.com/bin/windows/Rtools/
+Устанавливаю пакет в ‘C:/Users/futyr/AppData/Local/R/win-library/4.5’
+(потому что ‘lib’ не определено)
+пробую URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/dplyr_1.1.4.zip'
+Content type 'application/zip' length 1593482 bytes (1.5 MB)
+downloaded 1.5 MB
+
+пакет ‘dplyr’ успешно распакован, MD5-суммы проверены
+
+Скачанные бинарные пакеты находятся в
+	C:\Users\futyr\AppData\Local\Temp\RtmpaQi7Un\downloaded_packages
+> install.packages("tidyr")
+WARNING: Rtools is required to build R packages but is not currently installed. Please download and install the appropriate version of Rtools before proceeding:
+
+https://cran.rstudio.com/bin/windows/Rtools/
+Устанавливаю пакет в ‘C:/Users/futyr/AppData/Local/R/win-library/4.5’
+(потому что ‘lib’ не определено)
+пробую URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/tidyr_1.3.1.zip'
+Content type 'application/zip' length 1276983 bytes (1.2 MB)
+downloaded 1.2 MB
+
+пакет ‘tidyr’ успешно распакован, MD5-суммы проверены
+
+Скачанные бинарные пакеты находятся в
+	C:\Users\futyr\AppData\Local\Temp\RtmpaQi7Un\downloaded_packages
+> install.packages("jsonlite")
+WARNING: Rtools is required to build R packages but is not currently installed. Please download and install the appropriate version of Rtools before proceeding:
+
+https://cran.rstudio.com/bin/windows/Rtools/
+Устанавливаю пакет в ‘C:/Users/futyr/AppData/Local/R/win-library/4.5’
+(потому что ‘lib’ не определено)
+пробую URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/jsonlite_2.0.0.zip'
+Content type 'application/zip' length 1110765 bytes (1.1 MB)
+downloaded 1.1 MB
+
+пакет ‘jsonlite’ успешно распакован, MD5-суммы проверены
+
+Скачанные бинарные пакеты находятся в
+	C:\Users\futyr\AppData\Local\Temp\RtmpaQi7Un\downloaded_packages
+> install.packages("xml2")
+WARNING: Rtools is required to build R packages but is not currently installed. Please download and install the appropriate version of Rtools before proceeding:
+
+https://cran.rstudio.com/bin/windows/Rtools/
+Устанавливаю пакет в ‘C:/Users/futyr/AppData/Local/R/win-library/4.5’
+(потому что ‘lib’ не определено)
+пробую URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/xml2_1.5.1.zip'
+Content type 'application/zip' length 1620881 bytes (1.5 MB)
+downloaded 1.5 MB
+
+пакет ‘xml2’ успешно распакован, MD5-суммы проверены
+
+Скачанные бинарные пакеты находятся в
+	C:\Users\futyr\AppData\Local\Temp\RtmpaQi7Un\downloaded_packages
+> install.packages("rvest")
+WARNING: Rtools is required to build R packages but is not currently installed. Please download and install the appropriate version of Rtools before proceeding:
+
+https://cran.rstudio.com/bin/windows/Rtools/
+Устанавливаю пакет в ‘C:/Users/futyr/AppData/Local/R/win-library/4.5’
+(потому что ‘lib’ не определено)
+пробую URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/rvest_1.0.5.zip'
+Content type 'application/zip' length 318766 bytes (311 KB)
+downloaded 311 KB
+
+пакет ‘rvest’ успешно распакован, MD5-суммы проверены
+
+Скачанные бинарные пакеты находятся в
+	C:\Users\futyr\AppData\Local\Temp\RtmpaQi7Un\downloaded_packages
+> install.packages("readr")
+WARNING: Rtools is required to build R packages but is not currently installed. Please download and install the appropriate version of Rtools before proceeding:
+
+https://cran.rstudio.com/bin/windows/Rtools/
+Устанавливаю пакет в ‘C:/Users/futyr/AppData/Local/R/win-library/4.5’
+(потому что ‘lib’ не определено)
+пробую URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/readr_2.1.6.zip'
+Content type 'application/zip' length 1238420 bytes (1.2 MB)
+downloaded 1.2 MB
+
+пакет ‘readr’ успешно распакован, MD5-суммы проверены
+
+Скачанные бинарные пакеты находятся в
+	C:\Users\futyr\AppData\Local\Temp\RtmpaQi7Un\downloaded_packages
+> install.packages("stringr")
+WARNING: Rtools is required to build R packages but is not currently installed. Please download and install the appropriate version of Rtools before proceeding:
+
+https://cran.rstudio.com/bin/windows/Rtools/
+Устанавливаю пакет в ‘C:/Users/futyr/AppData/Local/R/win-library/4.5’
+(потому что ‘lib’ не определено)
+пробую URL 'https://cran.rstudio.com/bin/windows/contrib/4.5/stringr_1.6.0.zip'
+Content type 'application/zip' length 350250 bytes (342 KB)
+downloaded 342 KB
+
+пакет ‘stringr’ успешно распакован, MD5-суммы проверены
+
+Скачанные бинарные пакеты находятся в
+	C:\Users\futyr\AppData\Local\Temp\RtmpaQi7Un\downloaded_packages
+> download.file("https://storage.yandexcloud.net/iamcth-data/dataset.tar.gz", 
++               "dataset.tar.gz", mode = "wb")
+пробую URL 'https://storage.yandexcloud.net/iamcth-data/dataset.tar.gz'
+Content type 'application/gzip' length 12608123 bytes (12.0 MB)
+downloaded 12.0 MB
+
+> untar("dataset.tar.gz")
+
+> list.files()
+ [1] "caldera_attack_evals_round1_day1_2019-10-20201108.json"
+ [2] "dataset.tar.gz"                                        
+ [3] "dns.log"                                               
+ [4] "Lab1"                                                  
+ [5] "Lab2"                                                  
+ [6] "Lab3"                                                  
+ [7] "Lab4"                                                  
+ [8] "Lab5"                                                  
+ [9] "Lab6"                                                  
+[10] "README.md"                                             
+[11] "testdir"                                               
+[12] "workR.Rproj"                                           
+> data <- jsonlite::stream_in(file("caldera_attack_evals_round1_day1_2019-10-20201108.json"))
+opening file input connection.
+ Imported 101904 records. Simplifying...
+closing file input connection.
+> # Получаем справочник событий Windows с Microsoft
+> webpage_url <- "https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/plan/appendix-l--events-to-monitor"
+> webpage <- xml2::read_html(webpage_url)
+> tables <- rvest::html_table(webpage)
+> event_df <- tables[[1]]
+> glimpse(event_df)
+> glimpse(event_d)
+Rows: 381
+Columns: 4
+$ `Current Windows Event ID` <chr> "4618", "4649", "4719", "…
+$ `Legacy Windows Event ID`  <chr> "N/A", "N/A", "612", "N/A…
+$ `Potential Criticality`    <chr> "High", "High", "High", "…
+$ `Event Summary`            <chr> "A monitored security eve…
+> colnames(event_df) <- make.names(colnames(event_df))
+> #Преобразование данных и удаление вложенных фреймов
+> list_columns <- sapply(data, function(x) is.list(x) || is.data.frame(x))
+> list_columns_names <- names(data)[list_columns]
+> data_flat <- data
+> 
+> for(col_name in list_columns_names) {
++   if(is.list(data_flat[[col_name]]) && !is.null(data_flat[[col_name]])) {
++     # Используем unnest с разделителем имен
++     data_flat <- data_flat %>%
++       unnest(cols = all_of(col_name), names_sep = "_")
++   }
++ }
+> glimpse(data_flat)
+Rows: 101,904
+Columns: 34
+$ `@timestamp`         <chr> "2019-10-20T20:11:06.937Z", "20…
+$ `@metadata_beat`     <chr> "winlogbeat", "winlogbeat", "wi…
+$ `@metadata_type`     <chr> "_doc", "_doc", "_doc", "_doc",…
+$ `@metadata_version`  <chr> "7.4.0", "7.4.0", "7.4.0", "7.4…
+$ `@metadata_topic`    <chr> "winlogbeat", "winlogbeat", "wi…
+$ event_created        <chr> "2019-10-20T20:11:09.988Z", "20…
+$ event_kind           <chr> "event", "event", "event", "eve…
+$ event_code           <int> 4703, 4673, 10, 10, 10, 10, 11,…
+$ event_action         <chr> "Token Right Adjusted Events", …
+$ log_level            <chr> "information", "information", "…
+$ message              <chr> "A token right was adjusted.\n\…
+$ winlog_event_data    <df[,234]> <data.frame[20 x 234]>
+$ winlog_event_id      <int> 4703, 4673, 10, 10, 10, 10…
+$ winlog_provider_name <chr> "Microsoft-Windows-Security-Aud…
+$ winlog_api           <chr> "wineventlog", "wineventlog", "…
+$ winlog_record_id     <int> 50588, 104875, 226649, 153525, …
+$ winlog_computer_name <chr> "HR001.shire.com", "HFDC01.shir…
+$ winlog_process       <df[,2]> <data.frame[20 x 2]>
+$ winlog_keywords      <list> "Audit Success", "Audit Failure…
+$ winlog_provider_guid <chr> "{54849625-5478-4994-a5ba-3e…
+$ winlog_channel       <chr> "security", "Security", "Micro…
+$ winlog_task          <chr> "Token Right Adjusted Events", …
+$ winlog_opcode        <chr> "Info", "Info", "Info", "Info",…
+$ winlog_version       <int> NA, NA, 3, 3, 3, 3, 2, 3, 3, 3,…
+$ winlog_user          <df[,4]> <data.frame[20 x 4]>
+$ winlog_activity_id   <chr> NA, NA, NA, NA, NA, NA, NA, NA,…
+$ winlog_user_data     <df[,30]> <data.frame[20 x 30]>
+$ ecs_version          <chr> "1.1.0", "1.1.0", "1.1.0", "1.1…
+$ host_name            <chr> "WECServer", "WECServer", "W…
+$ agent_ephemeral_id   <chr> "b372be1f-ba0a-4d7e-b4df-79eac8…
+$ agent_hostname       <chr> "WECServer", "WECServer", "…
+$ agent_id             <chr> "d347d9a4-bff4-476c-b5a4-d51119…
+$ agent_version        <chr> "7.4.0", "7.4.0", "7.4.0", "7.4…
+$ agent_type           <chr> "winlogbeat", "winlogbeat", "wi…
+> single_value_cols <- sapply(data_flat, function(x) length(unique(x)) == 1)
+> 
+> data_clean <- data_flat[, !single_value_cols]
+> glimpse(data_clean)
+Rows: 101,904
+Columns: 21
+$ `@timestamp`         <chr> "2019-10-20T20:11:06.937Z", "2019-10-20T20:11:07.101Z", "2019-10-20T20:11:09.052Z", "2019-10-20T20:…
+$ event_created        <chr> "2019-10-20T20:11:09.988Z", "2019-10-20T20:11:09.988Z", "2019-10-20T20:11:11.995Z", "2019-10-20T20:…
+$ event_code           <int> 4703, 4673, 10, 10, 10, 10, 11, 10, 10, 10, 10, 7, 7, 7, 4689, 10, 5, 4703, 10, 10, 10, 10, 5158, 5…
+$ event_action         <chr> "Token Right Adjusted Events", "Sensitive Privilege Use", "Process accessed (rule: ProcessAccess)",…
+$ log_level            <chr> "information", "information", "information", "information", "information", "information", "informat…
+$ message              <chr> "A token right was adjusted.\n\nSubject:\n\tSecurity ID:\t\tS-1-5-18\n\tAccount Name:\t\tHR001$\n\t…
+$ winlog_event_data    <df[,234]> <data.frame[43 x 234]>
+$ winlog_event_id      <int> 4703, 4673, 10, 10, 10, 10, 11, 10, 10, 10, 10, 7, 7, 7, 4689, 10, 5, 4703, 10, 10, 10, 10, 51…
+$ winlog_provider_name <chr> "Microsoft-Windows-Security-Auditing", "Microsoft-Windows-Security-Auditing", "Microsoft-Windows-Sy…
+$ winlog_record_id     <int> 50588, 104875, 226649, 153525, 163488, 153526, 134651, 226650, 226651, 226652, 226653, 162367, 1623…
+$ winlog_computer_name <chr> "HR001.shire.com", "HFDC01.shire.com", "IT001.shire.com", "HR001.shire.com", "ACCT001.shire.com", "…
+$ winlog_process       <df[,2]> <data.frame[43 x 2]>
+$ winlog_keywords      <list> "Audit Success", "Audit Failure", <NULL>, <NULL>, <NULL>, <NULL>, <NULL>, <NULL>, <NULL>, <NULL>, <…
+$ winlog_provider_guid <chr> "{54849625-5478-4994-a5ba-3e3b0328c30d}", "{54849625-5478-4994-a5ba-3e3b0328c30d}", "{5770385f-c…
+$ winlog_channel       <chr> "security", "Security", "Microsoft-Windows-Sysmon/Operational", "Microsoft-Windows-Sysmon/Operatio…
+$ winlog_task          <chr> "Token Right Adjusted Events", "Sensitive Privilege Use", "Process accessed (rule: ProcessAccess)",…
+$ winlog_opcode        <chr> "Info", "Info", "Info", "Info", "Info", "Info", "Info", "Info", "Info", "Info", "Info", "Info", "In…
+$ winlog_version       <int> NA, NA, 3, 3, 3, 3, 2, 3, 3, 3, 3, 3, 3, 3, NA, 3, 3, NA, 3, 3, 3, 3, NA, 1, 1, NA, 2, NA, NA, 2, 2…
+$ winlog_user          <df[,4]> <data.frame[43 x 4]>
+$ winlog_activity_id   <chr> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
+$ winlog_user_data     <df[,30]> <data.frame[43 x 30]>
+ #Какое количество хостов представлено в данном датасете?
+> host_columns <- grep("host|computer|source", names(data_clean), ignore.case = TRUE, value = TRUE)
+> # Проверим содержимое этих колонок
+> for(col in host_columns) {
++     print(paste("Колонка:", col))
++     print(unique(data_clean[[col]])[1:10])
++ }
+[1] "Колонка: winlog_computer_name"
+ [1] "HR001.shire.com"   "HFDC01.shire.com"  "IT001.shire.com"   "ACCT001.shire.com" "FILE001.shire.com" NA                 
+ [7] NA                  NA                  NA                  NA                 
+ > #Подготовка датафрейма с расшифровкой Event_ID
+> event_id_cols <- grep("event|id", names(data_clean), ignore.case = TRUE, value = TRUE)
+> for(col in event_id_cols) {
++     print(paste("Колонка:", col, "| Тип:", class(data_clean[[col]])))
++     if(length(unique(data_clean[[col]])) < 20) {
++         print(unique(data_clean[[col]]))
++     }
++ }
+[1] "Колонка: event_created | Тип: character"
+[1] "Колонка: event_code | Тип: integer"
+[1] "Колонка: event_action | Тип: character"
+[1] "Колонка: winlog_event_data | Тип: data.frame"
+[1] "Колонка: winlog_event_id | Тип: integer"
+[1] "Колонка: winlog_provider_name | Тип: character"
+[1] "Колонка: winlog_record_id | Тип: integer"
+[1] "Колонка: winlog_provider_guid | Тип: character"
+[1] "Колонка: winlog_activity_id | Тип: character"
+> 
+> if("winlog_event_id" %in% names(data_clean)) {
++   
++   if(is.character(data_clean$winlog_event_id)) {
++     data_clean$winlog_event_id <- as.integer(data_clean$winlog_event_id)
++   }
++   
++   event_reference <- data_clean %>%
++     select(winlog_event_id) %>%
++     distinct() %>%
++     arrange(winlog_event_id) %>%
++     rename(event_id = winlog_event_id)  
++   
++   if("Event ID" %in% names(event_df)) {
++     event_df$Event_ID_num <- as.integer(event_df$`Event ID`)
++     event_reference <- event_reference %>%
++       left_join(event_df, by = c("event_id" = "Event_ID_num"))
++   }
++   print(event_reference)
++ } else {
++   print("Колонка winlog_event_id не найдена в data_clean")
++ }
+# A tibble: 109 × 1
+   event_id
+      <int>
+ 1        1
+ 2        2
+ 3        3
+ 4        5
+ 5        6
+ 6        7
+ 7        8
+ 8        9
+ 9       10
+10       11
+# ℹ 99 more rows
+# ℹ Use `print(n = ...)` to see more rows
+
+> #Поиск событий с высоким и средним уровнем значимости
+> level_cols <- grep("level|severity|importance|risk", names(data_clean), ignore.case = TRUE, value = TRUE)
+> for(col in level_cols) {
++     print(paste("Колонка:", col))
++     print(table(data_clean[[col]]))
++ }
+[1] "Колонка: log_level"
+
+      error information     verbose     warning 
+          4       78473       23205         222 
+> if(length(level_cols) > 0) {
++     # Пример для числовых кодов (обычно в Windows: 1=Критический, 2=Ошибка, 3=Предупреждение, 4=Информация)
++     if(is.numeric(data_clean[[level_cols[1]]])) {
++         high_events <- data_clean %>% filter(get(level_cols[1]) <= 2)
++         medium_events <- data_clean %>% filter(get(level_cols[1]) == 3)
++         
++         print(paste("Событий высокого уровня:", nrow(high_events)))
++         print(paste("Событий среднего уровня:", nrow(medium_events)))
++     }
++ if(is.character(data_clean[[level_cols[1]]])) {
++     high_medium_events <- data_clean %>% 
++         filter(grepl("high|medium|error|warning|critical", get(level_cols[1]), ignore.case = TRUE))
++     
++     high_events <- data_clean %>% 
++         filter(grepl("high|critical|error", get(level_cols[1]), ignore.case = TRUE))
++     
++     medium_events <- data_clean %>% 
++         filter(grepl("medium|warning", get(level_cols[1]), ignore.case = TRUE))
++     
++     print(paste("Событий высокого уровня:", nrow(high_events)))
++     print(paste("Событий среднего уровня:", nrow(medium_events)))
++ }
++ }
+[1] "Событий высокого уровня: 4"
+[1] "Событий среднего уровня: 222"
+```
+
+## Оценка результата
+
+ В результате лабораторной работы мы изучили структуру журнала системы Windows Active Directory , закрепили навыки исследования данных журнала Windows Active Directory
+
+
+## Вывод
+
+Таким образом, мы изучили структуру журнала системы Windows Active Directory , закрепили навыки исследования данных журнала Windows Active Directory
+
