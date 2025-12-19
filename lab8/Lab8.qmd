@@ -1,3 +1,4 @@
+---
 title: "Использование технологии Yandex DataLens для анализа данных сетевой активности"
 subtitle: "Практика №8"
 author: "deesshii@yandex.ru"
@@ -45,7 +46,6 @@ format:
 # Создать из запроса YandexQuery датасет DataLens.
 
 ![](png/2.png)
-
 
 ## Делаем нужные графики и диаграммы.
 
